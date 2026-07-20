@@ -294,6 +294,7 @@ export default function CreateAttendanceModal({
               <option value="100">100 metres</option>
               <option value="150">150 metres</option>
               <option value="7500">7000 metres</option>
+              <option value="25000">25000 metres</option>
             </select>
 
           </div>
