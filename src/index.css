@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+
+/* Enable dark mode via selector */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Light mode colors */
+  /* --color-bg: #ffffff;
+  --color-text: #000000; */
+}
+
+.dark {
+  /* Dark mode overrides */
+  /*  --color-bg: #0f172a;  || Dark blue background */
+  /* --color-text: #f1f5f9; || Light gray text */
+}
