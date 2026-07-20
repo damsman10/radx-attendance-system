@@ -268,6 +268,23 @@ await setDoc(courseRef, {
                 400 Level
               </option>
 
+              <option value="600">
+                600 Level
+              </option>
+
+              <option value="700">
+                700 Level
+              </option>
+
+              <option value="800">
+                800 Level
+              </option>
+
+              <option value="900">
+                900 Level
+              </option>
+
+
             </select>
 
 
