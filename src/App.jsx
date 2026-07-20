@@ -40,6 +40,7 @@ import MyLeaderboard from "./pages/MyLeaderboard";
 
 // Error Page
 import NotFound from "./pages/NotFound";
+import LocationTest from "./pages/LocationTest";
 
 
 function App() {
@@ -58,6 +59,8 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route path="/signup" element={<Signup />} />
+
+        <Route path="/location-test" element={<LocationTest />} />
 
 
         {/* Protected Routes */}
