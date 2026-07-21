@@ -9,9 +9,9 @@ const Footer = () => {
           Geolocation-Based Smart Attendance Management System
         </p>
 
-        <p>
+        {/* <p>
           Developed by <strong>ONI Damilola Olagoke</strong>
-        </p>
+        </p> */}
 
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
@@ -62,7 +62,7 @@ const Footer = () => {
           <span>•</span>
 
           <span>
-            RadX v1.0
+            RadX v2.5.2
           </span>
         </div>
 

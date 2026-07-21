@@ -40,7 +40,10 @@ import MyLeaderboard from "./pages/MyLeaderboard";
 
 // Error Page
 import NotFound from "./pages/NotFound";
+
+// Others
 import LocationTest from "./pages/LocationTest";
+import RoleRoute from "./components/RoleRoute";
 
 
 function App() {
@@ -94,84 +97,145 @@ function App() {
 
                       {/* Lecturer Dashboard */}
                       <Route
-                        path="lecturer-dashboard"
-                        element={<LecturerDashboard />}
-                      />
+                      path="lecturer-dashboard"
+                      element={
+                        <RoleRoute allowedRoles={["lecturer"]}>
+                          <LecturerDashboard />
+                        </RoleRoute>
+                      }
+                    />
 
 
                       {/* Student Dashboard */}
                       <Route
-                        path="student-dashboard"
-                        element={<StudentDashboard />}
-                      />
+                      path="student-dashboard"
+                      element={
+                        <RoleRoute allowedRoles={["student"]}>
+                          <StudentDashboard />
+                        </RoleRoute>
+                      }
+                    />
 
 
                       {/* Lecturer Routes */}
                       <Route
                         path="courses"
-                        element={<Courses />}
+                        element={
+                          <RoleRoute allowedRoles={["lecturer"]}>
+                            <Courses />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="students"
-                        element={<Students />}
+                        element={
+                          <RoleRoute allowedRoles={["lecturer"]}>
+                            <Students />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="attendance"
-                        element={<Attendance />}
+                        element={
+                          <RoleRoute allowedRoles={["lecturer"]}>
+                            <Attendance />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="attendance/:sessionId"
-                        element={<AttendanceSession />}
+                        element={
+                          <RoleRoute allowedRoles={["lecturer"]}>
+                            <AttendanceSession />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="reports"
-                        element={<Reports />}
+                        element={
+                          <RoleRoute allowedRoles={["lecturer"]}>
+                            <Reports />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="challenges"
-                        element={<Challenges />}
+                        element={
+                          <RoleRoute allowedRoles={["lecturer"]}>
+                            <Challenges />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="leaderboard"
-                        element={<Leaderboard />}
+                        element={
+                          <RoleRoute allowedRoles={["lecturer"]}>
+                            <Leaderboard />
+                          </RoleRoute>
+                        }
                       />
 
 
+                    
                       {/* Student Routes */}
                       <Route
                         path="my-courses"
-                        element={<MyCourses />}
+                        element={
+                          <RoleRoute allowedRoles={["student"]}>
+                            <MyCourses />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="course/:courseCode"
-                        element={<StudentCourseDetails />}
+                        element={
+                          <RoleRoute allowedRoles={["student"]}>
+                            <StudentCourseDetails />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="my-attendance"
-                        element={<MyAttendance />}
+                        element={
+                          <RoleRoute allowedRoles={["student"]}>
+                            <MyAttendance />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="active-attendance"
-                        element={<ActiveAttendance />}
+                        element={
+                          <RoleRoute allowedRoles={["student"]}>
+                            <ActiveAttendance />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="my-challenges"
-                        element={<MyChallenges />}
+                        element={
+                          <RoleRoute allowedRoles={["student"]}>
+                            <MyChallenges />
+                          </RoleRoute>
+                        }
                       />
 
                       <Route
                         path="my-leaderboard"
-                        element={<MyLeaderboard />}
+                        element={
+                          <RoleRoute allowedRoles={["student"]}>
+                            <MyLeaderboard />
+                          </RoleRoute>
+                        }
                       />
 
 

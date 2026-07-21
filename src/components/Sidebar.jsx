@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import logo from "../assets/logo.png";
 import {
   LayoutDashboard,
   BookOpen,
@@ -118,9 +119,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         {/* Logo */}
         <div className="flex items-center justify-between px-5 pt-6 pb-2">
 
-          <div className="text-[1.5rem] font-bold text-white leading-tight">
+          <img src={logo} alt="" className="w-[10rem]"/>
+
+          {/* <div className="text-[1.5rem] font-bold text-white leading-tight">
             Smart Attendance
-          </div>
+          </div> */}
 
           <button
             onClick={() => setSidebarOpen(false)}
@@ -169,7 +172,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           <DarkModeToggle />
 
           <div className="text-xs tracking-wide text-gray-500">
-            v 1.0.0
+            v 2.5.2
           </div>
 
         </div>
