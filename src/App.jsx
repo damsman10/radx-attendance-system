@@ -44,6 +44,8 @@ import NotFound from "./pages/NotFound";
 // Others
 import LocationTest from "./pages/LocationTest";
 import RoleRoute from "./components/RoleRoute";
+import Profile from "./pages/Profile";
+
 
 
 function App() {
@@ -94,7 +96,12 @@ function App() {
 
                     <Routes>
 
-
+                      {/* Profile */}
+                      <Route
+                        path="profile"
+                        element={<Profile />}
+                      />
+                      
                       {/* Lecturer Dashboard */}
                       <Route
                       path="lecturer-dashboard"

@@ -1,84 +1,549 @@
-import { Search, Bell } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+
+import {
+  Menu,
+  ChevronDown,
+  User,
+  LogOut,
+  Sun,
+  Moon,
+} from "lucide-react";
+
 import { useAuth } from "../context/AuthContext";
-import ppic from "../assets/ppic.jpg";
+import colorlogo from "../assets/colorlogo.png";
+
 
 const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
-  const { profile } = useAuth();
 
-  const userName = profile?.fullName || "";
+  const { profile, logout } = useAuth();
+
+  const navigate = useNavigate();
+
+  const dropdownRef = useRef(null);
+
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
+
+
+
+  const userName = profile?.fullName || "User";
+
+
+  const role =
+    profile?.role === "lecturer"
+      ? "Lecturer Portal"
+      : "Student Portal";
+
+
 
   const hour = new Date().getHours();
+
   const greeting =
-    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    hour < 12
+      ? "Good morning"
+      : hour < 18
+      ? "Good afternoon"
+      : "Good evening";
+
+
+
+
+
+  useEffect(() => {
+
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+
+  }, [isDark]);
+
+
+
+
+
+  useEffect(() => {
+
+    const handleOutsideClick = (event) => {
+
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setDropdownOpen(false);
+      }
+
+    };
+
+
+    const handleEscape = (event) => {
+
+      if (event.key === "Escape") {
+        setDropdownOpen(false);
+      }
+
+    };
+
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+
+    };
+
+
+  }, []);
+
+
+
+
+
+  const toggleDarkMode = () => {
+    setIsDark(prev => !prev);
+  };
+
+
+
+
+
+  const handleLogout = async () => {
+
+    try {
+
+      await logout();
+
+    } catch(error) {
+
+      console.error(error);
+
+    }
+
+  };
+
+
+
+
+
+
 
   return (
-    <header className="h-[5rem] flex items-center justify-between md:pl-72 px-6 bg-white dark:bg-[#1E293B] border-b border-gray-200 dark:border-gray-700 shadow-sm">
-      {/* Left Section — Hamburger + Logo */}
-      <div className="flex items-center gap-4">
+
+    <header
+      className="
+      h-20
+      flex
+      items-center
+      md:pl-72
+      px-4
+      sm:px-6
+      bg-white
+      dark:bg-[#1E293B]
+      border-b
+      border-gray-200
+      dark:border-gray-700
+      shadow-sm
+      "
+    >
+
+
+
+
+      {/* LEFT SIDE */}
+
+      <div
+        className="
+        flex
+        items-center
+        gap-3
+        flex-1
+        min-w-0
+        "
+      >
+
+
         <button
-          className="lg:hidden text-gray-700 dark:text-gray-300 focus:outline-none"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+
+          aria-label="Open sidebar"
+
+          onClick={() =>
+            setSidebarOpen(!sidebarOpen)
+          }
+
+          className="
+          lg:hidden
+          text-gray-700
+          dark:text-gray-300
+          hover:text-blue-600
+          transition
+          "
+
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
+
+          <Menu size={26}/>
+
         </button>
 
-        <h1 className="text-lg lg:text-xl font-semibold text-gray-700 dark:text-gray-100 block md:hidden">
-          RadX Attendance System
-        </h1>
 
-        {/* Greeting — Hidden on small screens */}
-        <h2 className="hidden md:block text-[20px] font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
-          {greeting}
-          {userName ? `, ${userName}` : ", User"}
-        </h2>
-      </div>
 
-      {/* Center Section — Search */}
-      <div className="flex-1 flex items-center justify-center gap-6">
-        <div className="relative w-[220px] md:w-[300px] lg:w-[380px] hidden sm:block">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
 
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300"
-          />
-        </div>
-      </div>
 
-      {/* Right Section — Notifications + Avatar */}
-      <div className="flex items-center gap-6">
-        <button className="relative text-gray-600 dark:text-gray-300 hover:text-[#3D78DA] transition">
-          <Bell size={20} />
+        {/* Mobile Logo */}
 
-          <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-[10px] px-[4px]">
-            2
-          </span>
-        </button>
+        <img
+
+          src={colorlogo}
+
+          alt="RadX Attendance System"
+
+          className="
+          w-24
+          object-contain
+          md:hidden
+          "
+
+        />
+
+
+
+
+
+
+        {/* Desktop Greeting */}
 
         <div
-          className="w-10 h-10 rounded-full bg-gray-400 bg-cover bg-center border-2 border-gray-300 dark:border-gray-700 cursor-pointer"
-          style={{ backgroundImage: `url(${ppic})` }}
-          title="User Profile"
-        ></div>
+          className="
+          hidden
+          md:block
+          leading-tight
+          "
+        >
+
+          <p
+            className="
+            text-sm
+            text-gray-500
+            dark:text-gray-400
+            "
+          >
+            {greeting}
+          </p>
+
+
+          <h1
+            className="
+            text-xl
+            font-semibold
+            text-gray-800
+            dark:text-white
+            "
+          >
+            {userName}
+          </h1>
+
+
+        </div>
+
+
       </div>
+
+
+
+
+
+
+
+
+      {/* DESKTOP CENTER BRAND */}
+
+      <div
+        className="
+        hidden
+        md:flex
+        flex-1
+        justify-center
+        "
+      >
+
+        <div className="text-center">
+
+
+          <h2
+            className="
+            text-lg
+            font-semibold
+            tracking-wide
+            text-gray-800
+            dark:text-white
+            "
+          >
+            RadX Attendance System
+          </h2>
+
+
+          <p
+            className="
+            text-xs
+            text-gray-500
+            dark:text-gray-400
+            "
+          >
+            {role}
+          </p>
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+
+
+
+
+      {/* RIGHT USER MENU */}
+
+      <div
+        ref={dropdownRef}
+        className="
+        relative
+        flex
+        justify-end
+        flex-shrink-0
+        "
+      >
+
+
+
+        <button
+
+          aria-label="Open user menu"
+
+          onClick={() =>
+            setDropdownOpen(prev => !prev)
+          }
+
+
+          className="
+          flex
+          items-center
+          gap-2
+          text-gray-700
+          dark:text-gray-200
+          hover:text-blue-600
+          transition
+          "
+
+        >
+
+
+          <span
+            className="
+            hidden
+            sm:block
+            max-w-[120px]
+            truncate
+            font-medium
+            "
+          >
+            {userName}
+          </span>
+
+
+
+          <ChevronDown
+
+            size={18}
+
+            className={`
+            transition-transform
+            ${
+              dropdownOpen
+                ? "rotate-180"
+                : ""
+            }
+            `}
+
+          />
+
+        </button>
+
+
+
+
+
+
+        {dropdownOpen && (
+
+          <div
+            className="
+            absolute
+            right-0
+            top-10
+            mt-3
+            w-56
+            rounded-xl
+            bg-white
+            dark:bg-gray-800
+            shadow-lg
+            border
+            border-gray-200
+            dark:border-gray-700
+            overflow-hidden
+            z-50
+            "
+          >
+
+
+            <button
+
+              onClick={() => {
+
+                navigate("/profile");
+
+                setDropdownOpen(false);
+
+              }}
+
+              className="
+              w-full
+              flex
+              items-center
+              gap-3
+              px-4
+              py-3
+              text-left
+              text-gray-700
+              dark:text-gray-200
+              hover:bg-gray-100
+              dark:hover:bg-gray-700
+              "
+
+            >
+
+              <User size={18}/>
+
+              Profile
+
+            </button>
+
+
+
+
+
+
+            <button
+
+              onClick={toggleDarkMode}
+
+              className="
+              w-full
+              flex
+              items-center
+              gap-3
+              px-4
+              py-3
+              text-gray-700
+              dark:text-gray-200
+              hover:bg-gray-100
+              dark:hover:bg-gray-700
+              "
+
+            >
+
+              {isDark
+                ? <Sun size={18}/>
+                : <Moon size={18}/>
+              }
+
+
+              {isDark
+                ? "Light Mode"
+                : "Dark Mode"
+              }
+
+
+            </button>
+
+
+
+
+
+
+
+            <button
+
+              onClick={handleLogout}
+
+              className="
+              w-full
+              flex
+              items-center
+              gap-3
+              px-4
+              py-3
+              text-left
+              text-red-600
+              hover:bg-red-50
+              dark:hover:bg-red-900/20
+              "
+
+            >
+
+              <LogOut size={18}/>
+
+              Logout
+
+
+            </button>
+
+
+
+          </div>
+
+        )}
+
+
+      </div>
+
+
+
     </header>
+
   );
+
 };
+
 
 export default Topbar;

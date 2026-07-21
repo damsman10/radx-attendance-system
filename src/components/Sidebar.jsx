@@ -169,7 +169,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         {/* Bottom */}
         <div className="flex flex-col items-center justify-center gap-3 text-gray-400 text-sm pb-6">
 
-          <DarkModeToggle />
+          {/* <DarkModeToggle /> */}
 
           <div className="text-xs tracking-wide text-gray-500">
             v 2.5.2
