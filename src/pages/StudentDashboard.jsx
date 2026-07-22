@@ -326,18 +326,18 @@ export default function StudentDashboard() {
 
 
             <button
-
-              onClick={() =>
-                navigate("/student/attendance")
-              }
-
-              className="mt-6 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
-
-            >
-
-              Join Attendance Session
-
-            </button>
+            disabled={studentActiveSessions.length === 0}
+            onClick={() => navigate("/student/attendance")}
+            className={`mt-6 rounded-xl px-5 py-3 font-semibold text-white transition ${
+              studentActiveSessions.length === 0
+                ? "cursor-not-allowed bg-gray-400"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {studentActiveSessions.length === 0
+              ? "No Active Session"
+              : "Join Attendance Session"}
+          </button>
 
 
           </div>

@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
+
 import colorlogo from "../assets/colorlogo.png";
+import whitelogo from "../assets/logo.png";
 
 
 const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
@@ -58,11 +60,17 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
   useEffect(() => {
 
     if (isDark) {
+
       document.documentElement.classList.add("dark");
+
       localStorage.setItem("theme", "dark");
+
     } else {
+
       document.documentElement.classList.remove("dark");
+
       localStorage.setItem("theme", "light");
+
     }
 
   }, [isDark]);
@@ -79,19 +87,25 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target)
       ) {
+
         setDropdownOpen(false);
+
       }
 
     };
+
 
 
     const handleEscape = (event) => {
 
       if (event.key === "Escape") {
+
         setDropdownOpen(false);
+
       }
 
     };
+
 
 
     document.addEventListener(
@@ -99,10 +113,12 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
       handleOutsideClick
     );
 
+
     document.addEventListener(
       "keydown",
       handleEscape
     );
+
 
 
     return () => {
@@ -111,6 +127,7 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
         "mousedown",
         handleOutsideClick
       );
+
 
       document.removeEventListener(
         "keydown",
@@ -127,7 +144,9 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
 
 
   const toggleDarkMode = () => {
-    setIsDark(prev => !prev);
+
+    setIsDark((prev) => !prev);
+
   };
 
 
@@ -140,7 +159,7 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
 
       await logout();
 
-    } catch(error) {
+    } catch (error) {
 
       console.error(error);
 
@@ -159,7 +178,8 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
     <header
       className="
       h-20
-      flex
+      grid
+      grid-cols-3
       items-center
       md:pl-72
       px-4
@@ -183,7 +203,6 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
         flex
         items-center
         gap-3
-        flex-1
         min-w-0
         "
       >
@@ -219,7 +238,7 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
 
         <img
 
-          src={colorlogo}
+          src={isDark ? whitelogo : colorlogo}
 
           alt="RadX Attendance System"
 
@@ -287,7 +306,6 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
         className="
         hidden
         md:flex
-        flex-1
         justify-center
         "
       >
@@ -325,13 +343,6 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
       </div>
 
 
-
-
-
-
-
-
-
       {/* RIGHT USER MENU */}
 
       <div
@@ -340,7 +351,6 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
         relative
         flex
         justify-end
-        flex-shrink-0
         "
       >
 
@@ -351,7 +361,7 @@ const Topbar = ({ sidebarOpen, setSidebarOpen }) => {
           aria-label="Open user menu"
 
           onClick={() =>
-            setDropdownOpen(prev => !prev)
+            setDropdownOpen((prev) => !prev)
           }
 
 
