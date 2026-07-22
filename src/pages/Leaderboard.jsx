@@ -1,181 +1,680 @@
-const Leaderboard = () => {
-  const leaderboard = [
-    {
-      rank: 1,
-      name: "John Adewale",
-      points: 1250,
-      badges: 8,
-      challenges: 12,
-      attendance: "98%",
-    },
-    {
-      rank: 2,
-      name: "Mary Okafor",
-      points: 1100,
-      badges: 6,
-      challenges: 10,
-      attendance: "95%",
-    },
-    {
-      rank: 3,
-      name: "David Ibrahim",
-      points: 950,
-      badges: 5,
-      challenges: 9,
-      attendance: "92%",
-    },
-    {
-      rank: 4,
-      name: "Sarah James",
-      points: 820,
-      badges: 4,
-      challenges: 7,
-      attendance: "89%",
-    },
-  ];
+import { useEffect, useMemo, useState } from "react";
 
-  return (
-    <div className="space-y-8 p-6">
+import {
+  collection,
+  onSnapshot,
+} from "firebase/firestore";
 
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-          Leaderboard
-        </h1>
+import {
+  Trophy,
+  Medal,
+} from "lucide-react";
 
-        <p className="mt-2 text-gray-600 dark:text-gray-300">
-          Monitor student engagement, achievements and performance rankings.
-        </p>
-      </div>
+import { db } from "../firebase";
 
 
-      {/* Summary Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
 
-        <div className="rounded-2xl bg-white p-5 shadow dark:bg-gray-900">
-          <p className="text-gray-500">
-            Total Participants
-          </p>
-          <h2 className="mt-2 text-3xl font-bold">
-            248
-          </h2>
-        </div>
+export default function Leaderboard(){
 
 
-        <div className="rounded-2xl bg-white p-5 shadow dark:bg-gray-900">
-          <p className="text-gray-500">
-            Challenges Completed
-          </p>
-          <h2 className="mt-2 text-3xl font-bold">
-            320
-          </h2>
-        </div>
+  const [submissions,setSubmissions] = useState([]);
+
+  const [loading,setLoading] = useState(true);
+
+  const [selectedCourse,setSelectedCourse] = useState("");
+
+  const [selectedChallenge,setSelectedChallenge] = useState("");
 
 
-        <div className="rounded-2xl bg-white p-5 shadow dark:bg-gray-900">
-          <p className="text-gray-500">
-            Badges Awarded
-          </p>
-          <h2 className="mt-2 text-3xl font-bold text-yellow-600">
-            86
-          </h2>
-        </div>
 
 
-        <div className="rounded-2xl bg-white p-5 shadow dark:bg-gray-900">
-          <p className="text-gray-500">
-            Points Distributed
-          </p>
-          <h2 className="mt-2 text-3xl font-bold">
-            12,450
-          </h2>
-        </div>
 
-      </div>
+  useEffect(()=>{
 
 
-      {/* Ranking Table */}
-      <div className="overflow-x-auto rounded-2xl bg-white shadow dark:bg-gray-900">
+    const unsubscribe = onSnapshot(
 
-        <table className="w-full text-left">
-
-          <thead className="border-b dark:border-gray-700">
-            <tr>
-              <th className="px-6 py-4">
-                Rank
-              </th>
-
-              <th className="px-6 py-4">
-                Student
-              </th>
-
-              <th className="px-6 py-4">
-                Points
-              </th>
-
-              <th className="px-6 py-4">
-                Badges
-              </th>
-
-              <th className="px-6 py-4">
-                Challenges
-              </th>
-
-              <th className="px-6 py-4">
-                Attendance
-              </th>
-            </tr>
-          </thead>
+      collection(
+        db,
+        "challengeSubmissions"
+      ),
 
 
-          <tbody>
-
-            {leaderboard.map((student) => (
-              <tr
-                key={student.rank}
-                className="border-b last:border-none dark:border-gray-700"
-              >
-
-                <td className="px-6 py-4 font-bold">
-                  #{student.rank}
-                </td>
+      (snapshot)=>{
 
 
-                <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
-                  {student.name}
-                </td>
+        const data =
+        snapshot.docs.map(doc=>({
+
+          id:doc.id,
+
+          ...doc.data()
+
+        }));
 
 
-                <td className="px-6 py-4">
-                  {student.points}
-                </td>
+        setSubmissions(data);
+
+        setLoading(false);
 
 
-                <td className="px-6 py-4">
-                  {student.badges}
-                </td>
+      },
 
 
-                <td className="px-6 py-4">
-                  {student.challenges}
-                </td>
+      (error)=>{
+
+        console.log(error);
+
+        setLoading(false);
+
+      }
+
+    );
 
 
-                <td className="px-6 py-4">
-                  {student.attendance}
-                </td>
 
-              </tr>
-            ))}
+    return unsubscribe;
 
-          </tbody>
 
-        </table>
+  },[]);
 
-      </div>
 
-    </div>
-  );
-};
 
-export default Leaderboard;
+
+
+
+
+  const courses = useMemo(()=>{
+
+
+    return [
+
+      ...new Set(
+
+        submissions.map(
+          item=>item.courseCode
+        )
+
+      )
+
+    ];
+
+
+  },[submissions]);
+
+
+
+
+
+
+  useEffect(()=>{
+
+
+    if(!selectedCourse && courses.length){
+
+      setSelectedCourse(
+        courses[0]
+      );
+
+    }
+
+
+  },[
+    courses,
+    selectedCourse
+  ]);
+
+
+
+
+
+
+
+
+  const challenges = useMemo(()=>{
+
+
+    return [
+
+      ...new Map(
+
+        submissions
+
+        .filter(
+          item =>
+          item.courseCode === selectedCourse
+        )
+
+        .map(item=>[
+
+          item.challengeId,
+
+          {
+
+            id:item.challengeId,
+
+            title:item.challengeTitle
+
+          }
+
+        ])
+
+      ).values()
+
+
+    ];
+
+
+  },[
+    submissions,
+    selectedCourse
+  ]);
+
+
+
+
+
+
+
+  useEffect(()=>{
+
+
+    if(challenges.length){
+
+      setSelectedChallenge(
+        challenges[0].id
+      );
+
+    }
+    else{
+
+      setSelectedChallenge("");
+
+    }
+
+
+  },[
+    selectedCourse,
+    challenges
+  ]);
+
+
+
+
+
+
+
+
+
+  const leaderboard = useMemo(()=>{
+
+
+    const students = {};
+
+
+
+    submissions
+
+    .filter(
+      item =>
+      item.courseCode === selectedCourse &&
+      item.challengeId === selectedChallenge
+    )
+
+    .forEach(item=>{
+
+
+      const id =
+      item.studentId;
+
+
+
+      if(!students[id]){
+
+
+        students[id]={
+
+          studentId:id,
+
+          name:
+          item.studentName || "Student",
+
+          points:0,
+
+          totalPoints:
+          item.totalPoints || 0
+
+        };
+
+
+      }
+
+
+
+      students[id].points +=
+      item.score || 0;
+
+
+
+    });
+
+
+
+
+
+    return Object.values(students)
+
+    .sort(
+      (a,b)=>
+      b.points-a.points
+    )
+
+    .map((student,index)=>({
+
+      ...student,
+
+      rank:index+1
+
+    }));
+
+
+
+  },[
+    submissions,
+    selectedCourse,
+    selectedChallenge
+  ]);
+
+
+
+
+
+
+
+
+
+return (
+
+<div className="
+space-y-8
+p-4
+sm:p-6
+">
+
+
+
+<div>
+
+<h1 className="
+text-3xl
+font-bold
+dark:text-white
+">
+
+Leaderboard
+
+</h1>
+
+
+<p className="
+mt-2
+text-gray-500
+">
+
+Rank students by individual challenge performance.
+
+</p>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div className="
+grid
+gap-4
+md:grid-cols-2
+">
+
+
+<div className="
+rounded-2xl
+bg-white
+p-5
+shadow
+dark:bg-gray-900
+">
+
+
+<label className="
+text-sm
+text-gray-500
+">
+
+Course
+
+</label>
+
+
+<select
+
+value={selectedCourse}
+
+onChange={(e)=>{
+
+setSelectedCourse(e.target.value);
+
+}}
+
+className="
+mt-2
+w-full
+rounded-xl
+border
+p-3
+dark:bg-gray-800
+dark:text-white
+"
+
+>
+
+{
+courses.map(course=>(
+
+<option
+key={course}
+value={course}
+>
+
+{course}
+
+</option>
+
+))
+
+}
+
+
+</select>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div className="
+rounded-2xl
+bg-white
+p-5
+shadow
+dark:bg-gray-900
+">
+
+
+<label className="
+text-sm
+text-gray-500
+">
+
+Challenge
+
+</label>
+
+
+<select
+
+value={selectedChallenge}
+
+onChange={(e)=>
+setSelectedChallenge(
+e.target.value
+)
+}
+
+className="
+mt-2
+w-full
+rounded-xl
+border
+p-3
+dark:bg-gray-800
+dark:text-white
+"
+
+>
+
+{
+challenges.map(challenge=>(
+
+<option
+
+key={challenge.id}
+
+value={challenge.id}
+
+>
+
+{challenge.title}
+
+</option>
+
+))
+
+}
+
+
+</select>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{
+loading ? (
+
+<p>
+Loading leaderboard...
+</p>
+
+
+)
+
+:
+
+leaderboard.length===0 ? (
+
+
+<div className="
+rounded-2xl
+bg-white
+p-8
+text-center
+shadow
+dark:bg-gray-900
+">
+
+No submissions yet for this challenge.
+
+
+</div>
+
+
+)
+
+:
+
+
+<div className="
+rounded-3xl
+bg-white
+shadow
+dark:bg-gray-900
+overflow-hidden
+">
+
+
+<div className="
+bg-gray-50
+p-5
+dark:bg-gray-800
+">
+
+<h2 className="
+font-bold
+dark:text-white
+">
+
+{
+challenges.find(
+item=>item.id===selectedChallenge
+)?.title
+}
+
+</h2>
+
+</div>
+
+
+
+
+
+{
+leaderboard.map(student=>(
+
+
+<div
+
+key={student.studentId}
+
+className="
+flex
+items-center
+justify-between
+border-b
+p-5
+dark:border-gray-800
+"
+
+>
+
+
+<div className="
+flex
+items-center
+gap-4
+">
+
+
+<div className="
+flex
+h-10
+w-10
+items-center
+justify-center
+rounded-full
+bg-yellow-100
+text-yellow-700
+">
+
+{
+student.rank <=3
+?
+<Medal size={20}/>
+:
+student.rank
+}
+
+</div>
+
+
+
+<div>
+
+<p className="
+font-semibold
+dark:text-white
+">
+
+{student.name}
+
+</p>
+
+
+<p className="
+text-sm
+text-gray-500
+">
+
+Rank #{student.rank}
+
+</p>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+<div className="
+flex
+items-center
+gap-2
+font-bold
+text-blue-600
+">
+
+<Trophy size={18}/>
+
+{student.points}/{student.totalPoints}
+
+</div>
+
+
+
+</div>
+
+
+))
+
+}
+
+
+</div>
+
+
+}
+
+
+
+</div>
+
+
+);
+
+
+}

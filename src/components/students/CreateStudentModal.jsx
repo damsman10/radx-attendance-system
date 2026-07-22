@@ -144,7 +144,10 @@ export default function CreateStudentModal({
               <option value="200">200 Level</option>
               <option value="300">300 Level</option>
               <option value="400">400 Level</option>
-              <option value="PGD">PGD</option>
+              <option value="400">600 Level</option>
+              <option value="400">700 Level</option>
+              <option value="400">800 Level</option>
+              <option value="400">900 Level</option>
             </select>
           </div>
 

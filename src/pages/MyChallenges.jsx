@@ -1,210 +1,652 @@
+import { useEffect, useState } from "react";
+
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+
 import {
   Target,
   Trophy,
   CheckCircle2,
-  Clock3,
 } from "lucide-react";
 
-const challenges = [
-  {
-    title: "Software Engineering Quiz",
-    course: "CSC401",
-    points: 100,
-    status: "Completed",
-    score: "85%",
-  },
-  {
-    title: "Database Concepts Challenge",
-    course: "CSC402",
-    points: 80,
-    status: "Available",
-    score: null,
-  },
-  {
-    title: "Network Security Challenge",
-    course: "CSC404",
-    points: 120,
-    status: "Completed",
-    score: "92%",
-  },
-  {
-    title: "AI Fundamentals Quiz",
-    course: "CSC406",
-    points: 100,
-    status: "Available",
-    score: null,
-  },
-];
 
+import { db } from "../firebase";
+import { useAuth } from "../context/AuthContext";
 
-export default function Challenges() {
-  return (
-    <div className="space-y-8 p-6">
+import StudentChallengeModal from "../components/challenges/StudentChallengeModal";
 
 
-      {/* Header */}
-      <section>
 
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Challenges
-        </h1>
+export default function MyChallenges() {
 
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Complete quiz challenges, earn points, and improve your leaderboard ranking.
-        </p>
 
-      </section>
+  const { user } = useAuth();
 
 
+  const [challenges,setChallenges] = useState([]);
 
-      {/* Challenge Summary */}
-      <section className="grid gap-6 md:grid-cols-3">
+  const [submissions,setSubmissions] = useState([]);
 
+  const [loading,setLoading] = useState(true);
 
-        <div className="rounded-3xl bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+  const [selectedChallenge,setSelectedChallenge] = useState(null);
 
-          <Target className="text-blue-600" />
 
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Challenges Completed
-          </p>
 
-          <h2 className="mt-2 text-4xl font-bold text-gray-900 dark:text-white">
-            12
-          </h2>
 
-        </div>
 
 
 
-        <div className="rounded-3xl bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+  useEffect(()=>{
 
-          <Trophy className="text-yellow-500" />
 
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Total Points
-          </p>
+    if(!user) return;
 
-          <h2 className="mt-2 text-4xl font-bold text-gray-900 dark:text-white">
-            850
-          </h2>
 
-        </div>
 
+    const challengeQuery = query(
 
+      collection(db,"challenges"),
 
-        <div className="rounded-3xl bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+      where(
+        "status",
+        "==",
+        "Active"
+      )
 
-          <CheckCircle2 className="text-emerald-600" />
+    );
 
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Current Rank
-          </p>
 
-          <h2 className="mt-2 text-4xl font-bold text-gray-900 dark:text-white">
-            #8
-          </h2>
 
-        </div>
+    const unsubscribe = onSnapshot(
 
+      challengeQuery,
 
-      </section>
+      async(snapshot)=>{
 
 
+        const challengeData =
+        snapshot.docs.map(doc=>({
 
+          id:doc.id,
 
-      {/* Challenge List */}
-      <section className="rounded-3xl bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          ...doc.data()
 
+        }));
 
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Available Challenges
-        </h2>
 
+        setChallenges(challengeData);
 
-        <div className="mt-6 grid gap-5 md:grid-cols-2">
 
 
-          {challenges.map((challenge) => (
 
-            <div
-              key={challenge.title}
-              className="rounded-2xl bg-gray-50 p-5 dark:bg-gray-800"
-            >
+        // Load student submissions
 
-              <div className="flex items-start justify-between">
+        const submissionQuery = query(
 
+          collection(
+            db,
+            "challengeSubmissions"
+          ),
 
-                <div>
+          where(
+            "studentId",
+            "==",
+            user.uid
+          )
 
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    {challenge.title}
-                  </h3>
+        );
 
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {challenge.course}
-                  </p>
 
-                </div>
 
+        const submissionSnapshot =
+        await getDocs(submissionQuery);
 
-                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                  +{challenge.points} pts
-                </span>
 
 
-              </div>
+        const submissionData =
+        submissionSnapshot.docs.map(doc=>({
 
+          id:doc.id,
 
+          ...doc.data()
 
-              <div className="mt-5 flex items-center justify-between">
+        }));
 
 
-                {challenge.status === "Completed" ? (
 
-                  <div className="flex items-center gap-2 text-sm text-emerald-600">
-                    <CheckCircle2 size={16}/>
-                    Completed ({challenge.score})
-                  </div>
+        setSubmissions(submissionData);
 
-                ) : (
 
-                  <div className="flex items-center gap-2 text-sm text-orange-600">
-                    <Clock3 size={16}/>
-                    Available
-                  </div>
+        setLoading(false);
 
-                )}
 
+      },
 
+      (error)=>{
 
-                <button
-                  className={`rounded-xl px-4 py-2 text-sm font-medium text-white ${
-                    challenge.status === "Completed"
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  }`}
-                >
-                  {challenge.status === "Completed"
-                    ? "Completed"
-                    : "Start Challenge"}
-                </button>
+        console.log(error);
 
+        setLoading(false);
 
-              </div>
+      }
 
+    );
 
-            </div>
 
-          ))}
 
+    return unsubscribe;
 
-        </div>
 
+  },[user]);
 
-      </section>
 
 
-    </div>
+
+
+
+
+  const completed =
+  submissions.length;
+
+
+
+
+
+
+
+  const totalPoints =
+  submissions.reduce(
+
+    (sum,item)=>
+    sum + (item.score || 0),
+
+    0
+
   );
+
+
+
+
+
+
+
+  const hasCompleted=(challengeId)=>{
+
+    return submissions.find(
+
+      submission =>
+      submission.challengeId === challengeId
+
+    );
+
+  };
+
+
+
+
+
+
+
+return (
+
+<div className="space-y-8 p-4 sm:p-6">
+
+
+
+<section>
+
+<h1 className="
+text-3xl
+font-bold
+text-gray-900
+dark:text-white
+">
+
+My Challenges
+
+</h1>
+
+
+<p className="
+mt-2
+text-gray-600
+dark:text-gray-400
+">
+
+Complete challenges and earn points.
+
+</p>
+
+
+</section>
+
+
+
+
+
+
+
+
+<section className="
+grid
+gap-5
+sm:grid-cols-3
+">
+
+
+
+<div className="
+rounded-2xl
+bg-white
+p-5
+shadow
+dark:bg-gray-900
+">
+
+<Target className="text-blue-600"/>
+
+
+<p className="mt-3 text-sm text-gray-500">
+Available Challenges
+</p>
+
+
+<h2 className="
+text-3xl
+font-bold
+dark:text-white
+">
+
+{challenges.length}
+
+</h2>
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+rounded-2xl
+bg-white
+p-5
+shadow
+dark:bg-gray-900
+">
+
+
+<Trophy className="text-yellow-500"/>
+
+
+<p className="mt-3 text-sm text-gray-500">
+Points Earned
+</p>
+
+
+<h2 className="
+text-3xl
+font-bold
+dark:text-white
+">
+
+{totalPoints}
+
+</h2>
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+rounded-2xl
+bg-white
+p-5
+shadow
+dark:bg-gray-900
+">
+
+
+<CheckCircle2 className="text-green-600"/>
+
+
+<p className="mt-3 text-sm text-gray-500">
+Completed
+</p>
+
+
+<h2 className="
+text-3xl
+font-bold
+dark:text-white
+">
+
+{completed}
+
+</h2>
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+
+
+
+<section>
+
+
+<h2 className="
+mb-4
+text-xl
+font-semibold
+dark:text-white
+">
+
+Available Challenges
+
+</h2>
+
+
+
+
+
+
+{
+loading ?
+
+
+<p className="text-gray-500">
+Loading challenges...
+</p>
+
+
+:
+
+<div className="
+grid
+gap-5
+md:grid-cols-3
+">
+
+
+{
+
+challenges.map(challenge=>{
+
+
+const submission =
+hasCompleted(challenge.id);
+
+
+
+return (
+
+<div
+
+key={challenge.id}
+
+className="
+rounded-2xl
+bg-white
+p-5
+shadow
+dark:bg-gray-900
+"
+
+>
+
+
+
+<div className="
+flex
+justify-between
+gap-3
+">
+
+
+<div>
+
+<h3 className="
+font-semibold
+dark:text-white
+">
+
+{challenge.title}
+
+</h3>
+
+
+<p className="
+mt-1
+text-sm
+text-gray-500
+">
+
+{challenge.courseCode}
+
+</p>
+
+
+</div>
+
+
+
+
+<span className="
+rounded-full
+bg-blue-100
+px-3
+py-1
+text-xs
+font-medium
+text-blue-700
+">
+
++{challenge.totalPoints} pts
+
+</span>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div className="
+mt-5
+grid
+grid-cols-2
+gap-4
+text-sm
+">
+
+
+<div>
+
+<p className="text-gray-500">
+Type
+</p>
+
+<p className="font-medium dark:text-white">
+{challenge.challengeType}
+</p>
+
+</div>
+
+
+
+
+
+<div>
+
+<p className="text-gray-500">
+Questions
+</p>
+
+<p className="font-medium dark:text-white">
+{challenge.questions?.length || 0}
+</p>
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{
+submission && (
+
+<div className="
+mt-4
+rounded-xl
+bg-green-50
+p-3
+text-sm
+text-green-700
+">
+
+Completed - Score: {submission.score}/{submission.totalPoints}
+
+</div>
+
+)
+
+}
+
+
+
+
+
+
+
+<button
+
+disabled={!!submission}
+
+onClick={()=>setSelectedChallenge(challenge)}
+
+className={`
+mt-5
+w-full
+rounded-xl
+py-2
+text-white
+
+${
+submission
+
+?
+
+"bg-gray-400 cursor-not-allowed"
+
+:
+
+"bg-[#3D78DA] hover:bg-blue-700"
+
+}
+
+`}
+
+>
+
+{
+
+submission
+
+?
+
+"Completed"
+
+:
+
+"Start Challenge"
+
+}
+
+
+</button>
+
+
+
+
+</div>
+
+
+)
+
+})
+
+}
+
+
+</div>
+
+}
+
+
+
+</section>
+
+
+
+
+
+
+
+
+
+{
+selectedChallenge &&
+
+<StudentChallengeModal
+
+challenge={selectedChallenge}
+
+onClose={()=>
+setSelectedChallenge(null)
+}
+
+/>
+
+}
+
+
+
+</div>
+
+);
+
+
 }

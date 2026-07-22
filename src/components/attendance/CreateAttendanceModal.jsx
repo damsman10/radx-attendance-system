@@ -24,6 +24,7 @@ export default function CreateAttendanceModal({
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [generatedCode, setGeneratedCode] = useState("");
 
   const [formData, setFormData] = useState({
     courseId: "",
@@ -39,18 +40,22 @@ export default function CreateAttendanceModal({
 
     venue: "",
     radius: "75",
+
+    verificationMode: "GPS",
+
     startTime: "",
     endTime: "",
   });
 
   useEffect(() => {
-  if (user) {
-    fetchCourses();
+    if (user) {
+      fetchCourses();
     }
   }, [user]);
 
   const fetchCourses = async () => {
-  if (!user) return;
+    if (!user) return;
+
     try {
       const q = query(
         collection(db, "courses"),
@@ -76,23 +81,23 @@ export default function CreateAttendanceModal({
 
     if (name === "courseCode") {
       const selected = courses.find(
-      (course) => course.courseCode === value
-    );
+        (course) => course.courseCode === value
+      );
 
-    setFormData((prev) => ({
-      ...prev,
+      setFormData((prev) => ({
+        ...prev,
 
-      courseId: selected?.id || "",
-      courseCode: selected?.courseCode || "",
-      courseTitle: selected?.courseTitle || "",
-      department: selected?.department || "",
-      level: selected?.level || "",
-      semester: selected?.semester || "",
-      session: selected?.session || "",
+        courseId: selected?.id || "",
+        courseCode: selected?.courseCode || "",
+        courseTitle: selected?.courseTitle || "",
+        department: selected?.department || "",
+        level: selected?.level || "",
+        semester: selected?.semester || "",
+        session: selected?.session || "",
 
-      studentIds: selected?.studentIds || [],
-      studentCount: selected?.studentCount || 0,
-    }));
+        studentIds: selected?.studentIds || [],
+        studentCount: selected?.studentCount || 0,
+      }));
     }
 
     setFormData((prev) => ({
@@ -101,11 +106,19 @@ export default function CreateAttendanceModal({
     }));
   };
 
+  const generateAttendanceCode = () => {
+    return Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
     setSuccess("");
+    setGeneratedCode("");
 
     if (new Date(formData.endTime) <= new Date(formData.startTime)) {
       setError("End time must be later than start time.");
@@ -125,8 +138,73 @@ export default function CreateAttendanceModal({
       const activeSnapshot = await getDocs(activeQuery);
 
       if (!activeSnapshot.empty) {
-        setError("An active attendance session already exists for this course.");
+        setError(
+          "An active attendance session already exists for this course."
+        );
         setLoading(false);
+        return;
+      }
+
+      if (formData.verificationMode === "CODE") {
+        try {
+          const attendanceCode = generateAttendanceCode();
+
+          setGeneratedCode(attendanceCode);
+
+          await addDoc(collection(db, "attendanceSessions"), {
+            ...formData,
+
+            lecturerId: user.uid,
+            lecturerName: profile.fullName,
+
+            latitude: null,
+            longitude: null,
+            radius: null,
+
+            verificationMode: formData.verificationMode,
+
+            attendanceCode,
+            attendanceCodeCreatedAt: Timestamp.now(),
+
+            attendanceCodeExpiresAt: Timestamp.fromDate(
+              new Date(formData.endTime)
+            ),
+
+            codeUsageCount: 0,
+            codeEnabled: true,
+
+            startTime: Timestamp.fromDate(
+              new Date(formData.startTime)
+            ),
+
+            endTime: Timestamp.fromDate(
+              new Date(formData.endTime)
+            ),
+
+            presentCount: 0,
+            presentStudents: [],
+
+            status: "Active",
+
+            createdAt: Timestamp.now(),
+          });
+
+          setSuccess(
+            `Attendance session created.
+
+Attendance Code:
+${attendanceCode}`
+          );
+
+          onSessionCreated();
+
+        } catch (err) {
+          console.log(err);
+          setError("Unable to create attendance session.");
+        } finally {
+          setLoading(false);
+        }
+
         return;
       }
 
@@ -139,6 +217,13 @@ export default function CreateAttendanceModal({
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
+            const attendanceCode =
+              formData.verificationMode === "GPS"
+                ? null
+                : generateAttendanceCode();
+
+            setGeneratedCode(attendanceCode || "");
+
             await addDoc(collection(db, "attendanceSessions"), {
               ...formData,
 
@@ -149,6 +234,21 @@ export default function CreateAttendanceModal({
               longitude: position.coords.longitude,
 
               radius: Number(formData.radius),
+
+              verificationMode: formData.verificationMode,
+
+              attendanceCode,
+
+              attendanceCodeCreatedAt: Timestamp.now(),
+
+              attendanceCodeExpiresAt: Timestamp.fromDate(
+                new Date(formData.endTime)
+              ),
+
+              codeUsageCount: 0,
+
+              codeEnabled:
+                formData.verificationMode !== "GPS",
 
               startTime: Timestamp.fromDate(
                 new Date(formData.startTime)
@@ -166,15 +266,24 @@ export default function CreateAttendanceModal({
               createdAt: Timestamp.now(),
             });
 
-            setSuccess("Attendance session created successfully.");
+            if (formData.verificationMode === "GPS") {
+              setSuccess(
+                "Attendance session created successfully."
+              );
+            } else {
+              setSuccess(
+                `Attendance session created.
+
+Attendance Code:
+${attendanceCode}
+
+GPS is the default attendance method. An attendance code has also been generated as a backup option for students who cannot complete GPS verification.`
+              );
+            }
 
             onSessionCreated();
 
-            setTimeout(() => {
-              onClose();
-            }, 1000);
-
-                      } catch (err) {
+          } catch (err) {
             console.log(err);
             setError("Unable to create attendance session.");
           } finally {
@@ -198,14 +307,11 @@ export default function CreateAttendanceModal({
     }
   };
 
-  return (
+    return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-
       <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white p-6 shadow-xl dark:bg-gray-900">
 
-        {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Start Attendance Session
           </h2>
@@ -216,7 +322,6 @@ export default function CreateAttendanceModal({
           >
             <X size={22} />
           </button>
-
         </div>
 
         <form
@@ -224,9 +329,7 @@ export default function CreateAttendanceModal({
           className="space-y-5"
         >
 
-          {/* Course */}
           <div>
-
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Course
             </label>
@@ -238,7 +341,6 @@ export default function CreateAttendanceModal({
               required
               className="w-full rounded-xl border border-gray-300 p-3 outline-none transition focus:border-[#3D78DA] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
-
               <option value="">
                 Select Course
               </option>
@@ -251,14 +353,10 @@ export default function CreateAttendanceModal({
                   {course.courseCode} — {course.courseTitle}
                 </option>
               ))}
-
             </select>
-
           </div>
 
-          {/* Venue */}
           <div>
-
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Venue
             </label>
@@ -272,12 +370,9 @@ export default function CreateAttendanceModal({
               placeholder="ICT Hall"
               className="w-full rounded-xl border border-gray-300 p-3 outline-none transition focus:border-[#3D78DA] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
-
           </div>
 
-          {/* Radius */}
           <div>
-
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Attendance Radius
             </label>
@@ -297,14 +392,36 @@ export default function CreateAttendanceModal({
               <option value="12000">12000 metres</option>
               <option value="25000">25000 metres</option>
             </select>
-
           </div>
 
-          {/* Time */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Verification Method
+            </label>
+
+            <select
+              name="verificationMode"
+              value={formData.verificationMode}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-gray-300 p-3 outline-none transition focus:border-[#3D78DA] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            >
+              <option value="GPS">
+                GPS Only
+              </option>
+
+              <option value="CODE">
+                Attendance Code Only
+              </option>
+
+              <option value="BOTH">
+                GPS + Backup Attendance Code (Recommended)
+              </option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
             <div>
-
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Start Time
               </label>
@@ -317,11 +434,9 @@ export default function CreateAttendanceModal({
                 required
                 className="w-full rounded-xl border border-gray-300 p-3 outline-none transition focus:border-[#3D78DA] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
-
             </div>
 
             <div>
-
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 End Time
               </label>
@@ -334,13 +449,21 @@ export default function CreateAttendanceModal({
                 required
                 className="w-full rounded-xl border border-gray-300 p-3 outline-none transition focus:border-[#3D78DA] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
-
             </div>
 
           </div>
 
           <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-300">
-            Your current location will be captured automatically when you start the attendance session. Students must be within the selected radius to mark attendance.
+
+            {formData.verificationMode === "GPS" &&
+              "Students must be within the selected GPS radius to mark attendance."}
+
+            {formData.verificationMode === "CODE" &&
+              "Students will enter a one-time attendance code provided by the lecturer."}
+
+            {formData.verificationMode === "BOTH" &&
+              "Students should normally mark attendance using GPS. If GPS verification fails due to network or device issues, they may use the attendance code provided by the lecturer as an alternative."}
+
           </div>
 
           {error && (
@@ -350,12 +473,29 @@ export default function CreateAttendanceModal({
           )}
 
           {success && (
-            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
+            <div className="whitespace-pre-line rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
               {success}
             </div>
           )}
 
-          {/* Buttons */}
+          {generatedCode && (
+            <div className="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+
+              <p className="font-semibold text-green-800 dark:text-green-300">
+                Attendance Code
+              </p>
+
+              <p className="mt-2 text-3xl font-bold tracking-widest text-green-700 dark:text-green-200">
+                {generatedCode}
+              </p>
+
+              <p className="mt-2 text-sm text-green-700 dark:text-green-300">
+                Use this code only when students are unable to complete GPS attendance. This code remains valid until the session ends.
+              </p>
+
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
 
             <button
@@ -380,7 +520,6 @@ export default function CreateAttendanceModal({
         </form>
 
       </div>
-
     </div>
   );
 }

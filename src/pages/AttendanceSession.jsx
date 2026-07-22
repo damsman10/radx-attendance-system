@@ -31,8 +31,8 @@ export default function AttendanceSession() {
   const [ending, setEnding] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  // Session listener
   useEffect(() => {
     if (!sessionId) return;
 
@@ -59,7 +59,7 @@ export default function AttendanceSession() {
     return unsubscribe;
   }, [sessionId]);
 
-  // Attendance listener
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -84,7 +84,7 @@ export default function AttendanceSession() {
     return unsubscribe;
   }, [sessionId]);
 
-  // Countdown
+
   useEffect(() => {
     if (!session?.endTime) {
       setTimeRemaining("--");
@@ -95,7 +95,6 @@ export default function AttendanceSession() {
       const end = session.endTime.toDate().getTime();
       const now = Date.now();
 
-      // Lecturer manually ended session
       if (session.status === "Completed") {
         setTimeRemaining("Session Ended");
         return;
@@ -103,7 +102,6 @@ export default function AttendanceSession() {
 
       const diff = end - now;
 
-      // Time elapsed
       if (diff <= 0) {
         setTimeRemaining("Expired");
         return;
@@ -135,6 +133,22 @@ export default function AttendanceSession() {
     return () => clearInterval(interval);
   }, [session]);
 
+
+  const handleCopyCode = async () => {
+    if (!session?.attendanceCode) return;
+
+    await navigator.clipboard.writeText(
+      session.attendanceCode
+    );
+
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
+
   const handleEndSession = async () => {
     if (!session || session.status === "Completed") return;
 
@@ -152,14 +166,18 @@ export default function AttendanceSession() {
         {
           status: "Completed",
           endedAt: Timestamp.now(),
+          codeEnabled: false,
         }
       );
+
     } catch (error) {
       console.error(error);
+
     } finally {
       setEnding(false);
     }
   };
+
 
   const handleDeleteSession = async () => {
     if (!session) return;
@@ -193,11 +211,14 @@ export default function AttendanceSession() {
       );
 
       navigate("/attendance");
+
     } catch (error) {
       console.error(error);
       alert("Unable to delete attendance session.");
     }
   };
+
+
   if (loading) {
     return (
       <div className="p-6">
@@ -206,6 +227,7 @@ export default function AttendanceSession() {
     );
   }
 
+
   if (!session) {
     return (
       <div className="p-6">
@@ -213,6 +235,7 @@ export default function AttendanceSession() {
       </div>
     );
   }
+
 
   const attendancePercentage =
     session.studentCount > 0
@@ -224,16 +247,17 @@ export default function AttendanceSession() {
         )
       : 0;
 
+
   const statusColor =
     timeRemaining === "Session Ended" ||
     timeRemaining === "Expired"
       ? "text-red-600"
       : "text-green-600";
 
+
   return (
     <div className="space-y-8 p-6">
 
-      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 
         <div>
@@ -282,7 +306,7 @@ export default function AttendanceSession() {
 
       </div>
 
-      {/* Summary */}
+
       <div className="grid gap-6 md:grid-cols-4">
 
         <div className="rounded-2xl bg-white p-5 shadow dark:bg-gray-900">
@@ -327,7 +351,69 @@ export default function AttendanceSession() {
 
       </div>
 
+
+      {/* Attendance Verification */}
+
+      {session.verificationMode !== "GPS" &&
+        session.codeEnabled && (
+
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-6 shadow dark:border-green-800 dark:bg-green-900/20">
+
+          <h2 className="text-xl font-bold text-green-800 dark:text-green-300">
+            Attendance Verification
+          </h2>
+
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Method:{" "}
+            {session.verificationMode === "CODE"
+              ? "Attendance Code Only"
+              : "GPS + Backup Attendance Code"}
+          </p>
+
+          <div className="mt-5">
+
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Attendance Code
+            </p>
+
+            <p className="mt-2 text-4xl font-bold tracking-widest text-green-700 dark:text-green-300">
+              {session.attendanceCode}
+            </p>
+
+          </div>
+
+          <button
+            onClick={handleCopyCode}
+            className="mt-5 rounded-xl bg-green-600 px-5 py-3 font-medium text-white transition hover:bg-green-700"
+          >
+            {copied ? "✓ Code copied" : "Copy Code"}
+          </button>
+
+          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+            {session.verificationMode === "CODE"
+              ? "Students can use this code to mark attendance until the session ends."
+              : "Use this code only when students are unable to complete GPS attendance. This code remains valid until the session ends."}
+          </p>
+
+          {session.attendanceCodeExpiresAt && (
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Valid until:{" "}
+              {session.attendanceCodeExpiresAt
+                .toDate()
+                .toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+            </p>
+          )}
+
+        </div>
+      )}
+
+
+
       {/* Session Details */}
+
       <div className="grid gap-6 md:grid-cols-2">
 
         <div className="rounded-2xl bg-white p-6 shadow dark:bg-gray-900">
@@ -338,23 +424,47 @@ export default function AttendanceSession() {
 
           <div className="space-y-3">
 
-            <p><strong>Course:</strong> {session.courseCode}</p>
+            <p>
+              <strong>Course:</strong> {session.courseCode}
+            </p>
 
-            <p><strong>Title:</strong> {session.courseTitle}</p>
+            <p>
+              <strong>Title:</strong> {session.courseTitle}
+            </p>
 
-            <p><strong>Department:</strong> {session.department ?? "-"}</p>
+            <p>
+              <strong>Department:</strong> {session.department ?? "-"}
+            </p>
 
-            <p><strong>Level:</strong> {session.level ?? "-"}</p>
+            <p>
+              <strong>Level:</strong> {session.level ?? "-"}
+            </p>
 
-            <p><strong>Semester:</strong> {session.semester ?? "-"}</p>
+            <p>
+              <strong>Semester:</strong> {session.semester ?? "-"}
+            </p>
 
-            <p><strong>Academic Session:</strong> {session.session ?? "-"}</p>
+            <p>
+              <strong>Academic Session:</strong> {session.session ?? "-"}
+            </p>
 
-            <p><strong>Radius:</strong> {session.radius}m</p>
+            <p>
+              <strong>Radius:</strong> {session.radius}m
+            </p>
+
+            <p>
+              <strong>Verification:</strong>{" "}
+              {session.verificationMode === "GPS"
+                ? "GPS Only"
+                : session.verificationMode === "CODE"
+                ? "Attendance Code Only"
+                : "GPS + Backup Attendance Code"}
+            </p>
 
           </div>
 
         </div>
+
 
         <div className="rounded-2xl bg-white p-6 shadow dark:bg-gray-900">
 
@@ -364,9 +474,15 @@ export default function AttendanceSession() {
 
           <div className="space-y-3">
 
-            <p><strong>Latitude:</strong> {session.latitude ?? "-"}</p>
+            <p>
+              <strong>Latitude:</strong>{" "}
+              {session.latitude ?? "-"}
+            </p>
 
-            <p><strong>Longitude:</strong> {session.longitude ?? "-"}</p>
+            <p>
+              <strong>Longitude:</strong>{" "}
+              {session.longitude ?? "-"}
+            </p>
 
           </div>
 
@@ -374,14 +490,20 @@ export default function AttendanceSession() {
 
       </div>
 
+
+
       {/* Students */}
+
       <div className="rounded-2xl bg-white shadow dark:bg-gray-900">
 
         <div className="border-b p-6 dark:border-gray-700">
+
           <h2 className="text-xl font-bold">
             Students Present
           </h2>
+
         </div>
+
 
         <div className="overflow-x-auto p-6">
 
@@ -396,14 +518,37 @@ export default function AttendanceSession() {
             <table className="w-full text-left text-sm">
 
               <thead className="border-b dark:border-gray-700">
+
                 <tr>
-                  <th className="px-4 py-3">Student Name</th>
-                  <th className="px-4 py-3">Matric Number</th>
-                  <th className="px-4 py-3">Distance</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Time</th>
+
+                  <th className="px-4 py-3">
+                    Student Name
+                  </th>
+
+                  <th className="px-4 py-3">
+                    Matric Number
+                  </th>
+
+                  <th className="px-4 py-3">
+                    Distance
+                  </th>
+
+                  <th className="px-4 py-3">
+                    Method
+                  </th>
+
+                  <th className="px-4 py-3">
+                    Status
+                  </th>
+
+                  <th className="px-4 py-3">
+                    Time
+                  </th>
+
                 </tr>
+
               </thead>
+
 
               <tbody>
 
@@ -418,23 +563,34 @@ export default function AttendanceSession() {
                       {record.studentName}
                     </td>
 
+
                     <td className="px-4 py-3">
                       {record.matricNumber}
                     </td>
 
+
                     <td className="px-4 py-3">
-                      {record.distance}m
+                      {record.distance ?? "-"}m
                     </td>
+
+
+                    <td className="px-4 py-3 font-medium text-blue-600">
+                      {record.verificationMethod || "GPS"}
+                    </td>
+
 
                     <td className="px-4 py-3 text-green-600">
                       {record.status}
                     </td>
 
+
                     <td className="px-4 py-3">
+
                       {record.markedAt?.toDate().toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
+
                     </td>
 
                   </tr>
@@ -450,6 +606,7 @@ export default function AttendanceSession() {
         </div>
 
       </div>
+
 
     </div>
   );
