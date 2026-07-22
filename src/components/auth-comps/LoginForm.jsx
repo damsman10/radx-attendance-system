@@ -72,27 +72,37 @@ export default function LoginForm() {
 
 
       switch (err.code) {
+      case "auth/invalid-credential":
+        setError("Invalid email or password.");
+        break;
 
-        case "auth/invalid-email":
-          setError("Invalid email format.");
-          break;
+      case "auth/invalid-email":
+        setError("Please enter a valid email address.");
+        break;
 
-        case "auth/user-disabled":
-          setError("This account has been disabled.");
-          break;
+      case "auth/user-disabled":
+        setError("This account has been disabled.");
+        break;
 
-        case "auth/user-not-found":
-          setError("No user found with this email.");
-          break;
+      case "auth/user-not-found":
+        setError("No account was found with this email address.");
+        break;
 
-        case "auth/wrong-password":
-          setError("Incorrect password.");
-          break;
+      case "auth/wrong-password":
+        setError("Incorrect password.");
+        break;
 
-        default:
-          setError(err.message);
+      case "auth/too-many-requests":
+        setError("Too many failed login attempts. Please try again later.");
+        break;
 
-      }
+      case "auth/network-request-failed":
+        setError("Network error. Please check your internet connection.");
+        break;
+
+      default:
+        setError("Unable to sign in. Please try again.");
+    }
 
 
     } finally {
