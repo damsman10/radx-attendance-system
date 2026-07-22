@@ -327,7 +327,7 @@ export default function StudentDashboard() {
 
             <button
             disabled={studentActiveSessions.length === 0}
-            onClick={() => navigate("/student/active-attendance")}
+            onClick={() => navigate("/active-attendance")}
             className={`mt-6 rounded-xl px-5 py-3 font-semibold text-white transition ${
               studentActiveSessions.length === 0
                 ? "cursor-not-allowed bg-gray-400"
