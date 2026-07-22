@@ -6,6 +6,7 @@ import {
   onSnapshot,
   query,
   where,
+  orderBy,
 } from "firebase/firestore";
 
 import { db } from "../firebase";
@@ -26,39 +27,40 @@ const Attendance = () => {
 
   useEffect(() => {
 
-  if (!user) return;
+    if (!user) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  const q = query(
-    collection(db, "attendanceSessions"),
-    where("lecturerId", "==", user.uid)
-  );
+    const q = query(
+      collection(db, "attendanceSessions"),
+      where("lecturerId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
 
-  const unsubscribe = onSnapshot(
-    q,
-    (snapshot) => {
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
 
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      setSessions(data);
-      setLoading(false);
+        setSessions(data);
+        setLoading(false);
 
-    },
-    (error) => {
+      },
+      (error) => {
 
-      console.log(error);
-      setLoading(false);
+        console.log(error);
+        setLoading(false);
 
-    }
-  );
+      }
+    );
 
-  return () => unsubscribe();
+    return () => unsubscribe();
 
-}, [user]);
+  }, [user]);
 
   const activeSessions = sessions.filter(
     (s) => s.status === "Active"
@@ -109,6 +111,7 @@ const Attendance = () => {
         </button>
 
       </div>
+
 
       {/* Summary Cards */}
 

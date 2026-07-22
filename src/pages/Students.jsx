@@ -11,7 +11,6 @@ import {
 import {
   BookOpen,
   Users,
-  Search,
   Download,
   Eye,
 } from "lucide-react";
@@ -28,7 +27,6 @@ export default function Students() {
   const [students, setStudents] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [attendanceSessions, setAttendanceSessions] = useState([]);
-  const [search, setSearch] = useState("");
 
 
 
@@ -97,22 +95,17 @@ export default function Students() {
   useEffect(() => {
 
     const unsubscribe = onSnapshot(
-
       collection(db, "attendanceRecords"),
-
       (snapshot) => {
 
         setAttendanceRecords(
-
           snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }))
-
         );
 
       }
-
     );
 
     return unsubscribe;
@@ -129,29 +122,27 @@ export default function Students() {
   useEffect(() => {
 
     const unsubscribe = onSnapshot(
-
       collection(db, "attendanceSessions"),
-
       (snapshot) => {
 
         setAttendanceSessions(
-
           snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }))
-
         );
 
       }
-
     );
 
     return unsubscribe;
 
   }, []);
 
-    /* ==========================================
+
+
+
+  /* ==========================================
       GROUP STUDENTS BY COURSE
   ========================================== */
 
@@ -159,77 +150,67 @@ export default function Students() {
 
     return courses.map((course) => {
 
-      // Students enrolled in this course
       const enrolledStudents = students.filter((student) =>
         course.studentIds?.includes(student.id)
       );
 
-      // Total attendance sessions for this course
+
       const totalSessions = attendanceSessions.filter(
-        (session) => session.courseCode === course.courseCode
+        (session) =>
+          session.courseCode === course.courseCode
       ).length;
 
-      const studentData = enrolledStudents
-        .map((student) => {
 
-          // Student attendance records for this course
-          const records = attendanceRecords.filter(
-            (record) =>
-              record.studentId === student.id &&
-              record.courseCode === course.courseCode
-          );
 
-          const present = records.filter(
+      const studentData = enrolledStudents.map((student) => {
+
+
+        const records = attendanceRecords.filter(
+          (record) =>
+            record.studentId === student.id &&
+            record.courseCode === course.courseCode
+        );
+
+
+        const present = records.filter(
           (record) =>
             record.status === "Present" ||
             record.status === "Late"
         ).length;
 
-          const attendance =
-            totalSessions > 0
-              ? Math.round((present / totalSessions) * 100)
-              : 0;
 
-          const lastAttendance =
-            records.length > 0
-              ? records
-                  .sort(
-                    (a, b) =>
-                      b.markedAt?.seconds -
-                      a.markedAt?.seconds
-                  )[0]
-              : null;
 
-          return {
-            ...student,
-            attendance,
-            present,
-            totalSessions,
-            lastAttendance,
-          };
+        const attendance =
+          totalSessions > 0
+            ? Math.round(
+                (present / totalSessions) * 100
+              )
+            : 0;
 
-        })
-        .filter((student) => {
 
-          if (!search.trim()) return true;
 
-          const keyword = search.toLowerCase();
+        const lastAttendance =
+          records.length > 0
+            ? records.sort(
+                (a, b) =>
+                  b.markedAt?.seconds -
+                  a.markedAt?.seconds
+              )[0]
+            : null;
 
-          return (
-            student.fullName
-              ?.toLowerCase()
-              .includes(keyword) ||
 
-            student.email
-              ?.toLowerCase()
-              .includes(keyword) ||
 
-            student.matricNumber
-              ?.toLowerCase()
-              .includes(keyword)
-          );
+        return {
+          ...student,
+          attendance,
+          present,
+          totalSessions,
+          lastAttendance,
+        };
 
-        });
+      });
+
+
 
       return {
         ...course,
@@ -243,8 +224,8 @@ export default function Students() {
     students,
     attendanceRecords,
     attendanceSessions,
-    search,
   ]);
+
 
 
 
@@ -253,6 +234,7 @@ export default function Students() {
   ========================================== */
 
   const totalCourses = courses.length;
+
 
   const totalStudents = new Set(
     courseGroups.flatMap((course) =>
@@ -263,22 +245,91 @@ export default function Students() {
 
 
   /* ==========================================
-      EXPORT PLACEHOLDER
+      EXPORT CSV
   ========================================== */
 
   const exportAttendance = (course) => {
 
-    console.log(
-      "Export Attendance:",
-      course.courseCode
+    const rows = course.students.map((student) => ({
+      Name: student.fullName,
+      "Matric Number": student.matricNumber,
+      Email: student.email,
+      "Attendance (%)": student.attendance,
+      Present: student.present,
+      "Total Sessions": student.totalSessions,
+      "Last Attendance":
+        student.lastAttendance?.markedAt
+          ?.toDate()
+          .toLocaleString() || "N/A",
+      "Verification Method":
+        student.lastAttendance?.verificationMethod ||
+        "N/A",
+    }));
+
+
+    if (rows.length === 0) {
+
+      alert("No students available to export.");
+
+      return;
+
+    }
+
+
+    const headers = Object.keys(rows[0]);
+
+
+    const csv = [
+      headers.join(","),
+      ...rows.map((row) =>
+        headers
+          .map(
+            (header) =>
+              `"${row[header] ?? ""}"`
+          )
+          .join(",")
+      ),
+    ].join("\n");
+
+
+
+    const blob = new Blob(
+      [csv],
+      {
+        type: "text/csv;charset=utf-8;",
+      }
     );
+
+
+    const url = URL.createObjectURL(blob);
+
+
+    const link = document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+      `${course.courseCode}_Attendance_Report.csv`;
+
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+
+    URL.revokeObjectURL(url);
 
   };
 
-    return (
+
+
+  return (
     <div className="space-y-8 p-6">
 
       {/* Header */}
+
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
         <div>
@@ -298,6 +349,7 @@ export default function Students() {
 
 
       {/* Summary Cards */}
+
       <div className="grid gap-6 md:grid-cols-2">
 
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
@@ -317,7 +369,9 @@ export default function Students() {
             </div>
 
             <div className="rounded-2xl bg-blue-100 p-4 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
+
               <BookOpen size={28} />
+
             </div>
 
           </div>
@@ -342,8 +396,11 @@ export default function Students() {
 
             </div>
 
+
             <div className="rounded-2xl bg-emerald-100 p-4 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300">
+
               <Users size={28} />
+
             </div>
 
           </div>
@@ -352,33 +409,8 @@ export default function Students() {
 
       </div>
 
-
-
-      {/* Search */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-
-        <div className="relative">
-
-          <Search
-            size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-
-          <input
-            type="text"
-            placeholder="Search by name, email or matric number..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-2xl border border-slate-300 py-3 pl-12 pr-4 outline-none transition focus:border-blue-600 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-          />
-
-        </div>
-
-      </div>
-
-
-
       {/* Courses */}
+
       <div className="space-y-8">
 
         {courseGroups.map((course) => (
@@ -389,6 +421,7 @@ export default function Students() {
           >
 
             {/* Course Header */}
+
             <div className="flex flex-col gap-4 border-b border-slate-200 p-6 dark:border-gray-700 md:flex-row md:items-center md:justify-between">
 
               <div>
@@ -408,17 +441,27 @@ export default function Students() {
 
               </div>
 
+
               <button
                 onClick={() => exportAttendance(course)}
                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 font-medium text-white transition hover:bg-emerald-700"
               >
+
                 <Download size={18} />
+
                 Export Attendance
+
               </button>
+
 
             </div>
 
-                        <div className="overflow-x-auto">
+
+
+
+            {/* Students Table */}
+
+            <div className="overflow-x-auto">
 
               <table className="w-full">
 
@@ -426,31 +469,40 @@ export default function Students() {
 
                   <tr className="text-left text-sm text-slate-500 dark:text-gray-400">
 
+
                     <th className="px-6 py-4">
                       Student
                     </th>
+
 
                     <th className="px-6 py-4">
                       Matric Number
                     </th>
 
+
                     <th className="px-6 py-4">
                       Email
                     </th>
+
 
                     <th className="px-6 py-4">
                       Attendance
                     </th>
 
+
                     <th className="px-6 py-4">
                       Action
                     </th>
+
 
                   </tr>
 
                 </thead>
 
+
+
                 <tbody>
+
 
                   {course.students.length === 0 ? (
 
@@ -460,37 +512,59 @@ export default function Students() {
                         colSpan={5}
                         className="px-6 py-10 text-center text-slate-500 dark:text-gray-400"
                       >
+
                         No enrolled students found.
+
                       </td>
 
                     </tr>
 
+
                   ) : (
 
+
                     course.students.map((student) => (
+
 
                       <tr
                         key={student.id}
                         className="border-b border-slate-200 last:border-none dark:border-gray-700"
                       >
 
+
                         <td className="px-6 py-4">
+
 
                           <p className="font-medium text-slate-900 dark:text-white">
+
                             {student.fullName}
+
                           </p>
 
+
                         </td>
 
+
+
                         <td className="px-6 py-4 text-slate-600 dark:text-gray-300">
+
                           {student.matricNumber}
+
                         </td>
 
+
+
                         <td className="px-6 py-4 text-slate-600 dark:text-gray-300">
+
                           {student.email}
+
                         </td>
+
+
+
 
                         <td className="px-6 py-4">
+
 
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -501,12 +575,20 @@ export default function Students() {
                                 : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
                             }`}
                           >
+
                             {student.attendance}%
+
                           </span>
+
 
                         </td>
 
+
+
+
+
                         <td className="px-6 py-4">
+
 
                           <button
                             onClick={() =>
@@ -516,29 +598,45 @@ export default function Students() {
                             }
                             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
                           >
+
                             <Eye size={16} />
+
                             View
+
                           </button>
+
 
                         </td>
 
+
+
                       </tr>
+
 
                     ))
 
+
                   )}
+
+
 
                 </tbody>
 
+
               </table>
+
 
             </div>
 
+
           </div>
+
 
         ))}
 
+
       </div>
+
 
     </div>
 
